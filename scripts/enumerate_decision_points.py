@@ -68,6 +68,8 @@ PATTERNS = [
 
 COMPOUND_RE = re.compile(r"&&|\|\|")
 BOUNDARY_RE = re.compile(r">=|<=|===|!==|==|!=|<>|>|<")
+# 参数约束注解（Java Bean Validation / Jakarta 为主，其它语言映射见 references/input-constraints.md）
+CONSTRAINT_RE = re.compile(r"@(NotNull|NotBlank|NotEmpty|Min|Max|Size|Pattern|Email|Positive|Negative|DecimalMin|DecimalMax|Range|Length|MinLength|MaxLength)\b")
 # 剔除箭头函数 -> 对 boundary 的干扰
 ARROW_RE = re.compile(r"->|\w+\s*:\s*\w+\s*=>")
 
@@ -109,6 +111,7 @@ def scan_file(path: str):
     if not lang:
         return None
     points = []
+    constraints = []
     try:
         with open(path, encoding="utf-8", errors="replace") as f:
             for line_no, raw in enumerate(f, start=1):
@@ -125,10 +128,18 @@ def scan_file(path: str):
                         "compound": compound,
                         "boundary": boundary,
                     })
+                for cm in CONSTRAINT_RE.finditer(cleaned):
+                    constraints.append({
+                        "line": line_no,
+                        "type": "constraint",
+                        "annotation": cm.group(1),
+                        "text": cleaned.strip()[:60],
+                    })
     except OSError as e:
         print(f"warning: 无法读取 {path}: {e}", file=sys.stderr)
         return None
-    return {"path": path.replace("\\", "/"), "language": lang, "decision_points": points}
+    return {"path": path.replace("\\", "/"), "language": lang,
+            "decision_points": points, "constraints": constraints}
 
 
 def collect_files(path):
@@ -162,11 +173,13 @@ def main():
             files.append(info)
             total += len(info["decision_points"])
 
+    const_total = sum(len(f.get("constraints") or []) for f in files)
     result = {
         "tool": "enumerate_decision_points",
         "generated": date.today().isoformat(),
         "scanned_files": len(files),
         "total_decision_points": total,
+        "total_input_constraints": const_total,
         "files": files,
     }
     out = json.dumps(result, ensure_ascii=False, indent=2)
