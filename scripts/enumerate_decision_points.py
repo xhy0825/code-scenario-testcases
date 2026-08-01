@@ -70,8 +70,11 @@ COMPOUND_RE = re.compile(r"&&|\|\|")
 BOUNDARY_RE = re.compile(r">=|<=|===|!==|==|!=|<>|>|<")
 # 参数约束注解（Java Bean Validation / Jakarta 为主，其它语言映射见 references/input-constraints.md）
 CONSTRAINT_RE = re.compile(r"@(NotNull|NotBlank|NotEmpty|Min|Max|Size|Pattern|Email|Positive|Negative|DecimalMin|DecimalMax|Range|Length|MinLength|MaxLength)\b")
-# 外部依赖调用点（xxxService/xxxDao/xxxClient 等，见 references/external-contracts.md）
-EXTERNAL_CALL_RE = re.compile(r"\b\w+(Service|Dao|Repository|Client|Remote|Gateway|Api)\s*\.\s*\w+\(")
+# 外部依赖调用点（xxxService/xxxDao/xxxClient 及 Python snake_case xxx_service 等，见 references/external-contracts.md）
+EXTERNAL_CALL_RE = re.compile(
+    r"\b\w*(?:Service|Dao|Repository|Client|Remote|Gateway|Api|"
+    r"_service|_dao|_repository|_client|_remote|_gateway|_api)\.\w+\("
+)
 # 剔除箭头函数 -> 对 boundary 的干扰
 ARROW_RE = re.compile(r"->|\w+\s*:\s*\w+\s*=>")
 
