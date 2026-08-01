@@ -165,6 +165,19 @@ def build_coverage_sheet(wb, coverage):
             ws.cell(row=row, column=1, value=note).alignment = wrap
             row += 1
 
+    row += 1
+    ws.cell(row=row, column=1, value="规则缺口（疑似缺失的业务规则，不参与覆盖统计）").font = bold
+    row += 1
+    gaps = (coverage or {}).get("rule_gaps") or []
+    if not gaps:
+        ws.cell(row=row, column=1, value="无").alignment = wrap
+    else:
+        for gap in gaps:
+            if isinstance(gap, dict):
+                gap = f"{gap.get('category', '')}: {gap.get('gap', '')}（{gap.get('function', '')}，建议确认：{gap.get('confirm_with', '')}）"
+            ws.cell(row=row, column=1, value=gap).alignment = wrap
+            row += 1
+
     ws.column_dimensions["A"].width = 28
     ws.column_dimensions["B"].width = 32
     ws.column_dimensions["C"].width = 20
