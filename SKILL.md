@@ -171,10 +171,13 @@ description: 根据业务代码生成研发自测用例 Excel 表格：把业务
 - **覆盖率汇报**：入口覆盖 X/Y、判定点覆盖 X/Y；未达 100% 时列出缺口；说明哪些项因代码无法表达而被显式排除
 - 给出 Excel 文件路径（`<skill目录>/testcase/<项目名>/<项目名>_<日期>_<版本>.xlsx`，含「覆盖说明」sheet）；用例较多时建议用户按场景/优先级筛选
 
-## 输出示例
+## 输出示例与参考模板
 
-**代码片段（Java）：**
+分场景的**代码片段 → 测试用例模板**已抽离到 `references/code-snippet-templates.md`，覆盖 13 类条件结构（简单 if、if-else、多路链、嵌套、switch、复合条件、三目、循环内条件、边界比较、状态机、try/catch、判空、多 case 合并/类型判断）。生成用例时**先对照该模板定位场景类型**，再按第 3 步规则（嵌套不笛卡尔积、复合拆原子、边界补值）套用展开。
 
+简要示例（Java createOrder 片段 → 用例节选）：
+
+**代码片段：**
 ```java
 public Order createOrder(OrderReq req) {
     if (req.getUserId() == null) {              // L3
@@ -185,7 +188,6 @@ public Order createOrder(OrderReq req) {
     }
     switch (req.getPayType()) {                 // L8
         case 1: order.setPay("wechat"); break;
-        case 2: order.setPay("alipay"); break;
         default: throw new BizException("支付方式不支持");
     }
     return order;
@@ -199,8 +201,7 @@ public Order createOrder(OrderReq req) {
 | TC-ORD-001 | 订单管理 | 创建订单 | 创建订单-用户为空校验 | 调用创建订单接口 | body 传 {userId:null} | P0 | 返回错误"用户不能为空"，不生成订单 |  |  | OrderService.java:3 |
 | TC-ORD-002 | 订单管理 | 创建订单 | 创建订单-库存不足校验 | userId 有效 | body 传 {stock:false} | P0 | 返回错误"库存不足"，不生成订单 |  |  | OrderService.java:5 |
 | TC-ORD-003 | 订单管理 | 创建订单 | 创建订单-微信支付 | 参数有效 | 传 payType=1 | P1 | 订单支付方式置为 wechat，返回订单 |  |  | OrderService.java:8 |
-| TC-ORD-004 | 订单管理 | 创建订单 | 创建订单-支付宝支付 | 参数有效 | 传 payType=2 | P1 | 订单支付方式置为 alipay，返回订单 |  |  | OrderService.java:9 |
-| TC-ORD-005 | 订单管理 | 创建订单 | 创建订单-支付方式不支持 | 参数有效 | 传 payType=3 | P2 | 返回错误"支付方式不支持" |  |  | OrderService.java:11 |
+| TC-ORD-004 | 订单管理 | 创建订单 | 创建订单-支付方式不支持 | 参数有效 | 传 payType=3 | P2 | 返回错误"支付方式不支持" |  |  | OrderService.java:11 |
 
 ## 注意
 
