@@ -359,6 +359,7 @@ code-scenario-testcases -diff a1b2c3d
 | **v1.9** | 输入约束分析 | 新增 `references/input-constraints.md`：从参数约束注解（@NotNull/@Min/@Max/@Pattern 等）与类型生成等价类用例；枚举脚本识别约束注解计入 dp.json |
 | **v1.10** | 外部契约建模 | 新增 `references/external-contracts.md`：对依赖调用点建模契约五态（成功/空值/异常/超时/降级）；枚举脚本识别外部调用点计入 dp.json |
 | **v1.11** | 高级维度 | 新增 `references/advanced-dimensions.md`：数据流/null 传播、时间/时序/幂等、权限矩阵、容量/计算边界（默认启用）；MC/DC、业务链路（按需启用） |
+| **v1.12** | 字段质量 | 强化字段填写规范 + 4 条质量自检（预期可判定 / 前置可构造 / 步骤可复现 / 名称用业务语义）；代码位置精确到判定行 + 方法名 |
 
 ---
 
