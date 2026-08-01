@@ -70,7 +70,7 @@ def load_data(path):
         return json.load(f)
 
 
-def build_coverage_sheet(wb, coverage):
+def build_coverage_sheet(wb, coverage, cases=None):
     """在同一工作簿新增「覆盖说明」sheet：覆盖统计（含变更范围）+ 追溯矩阵 + 标注区（缺口/无法验证/规则缺口）。"""
     ws = wb.create_sheet("覆盖说明")
     thin = Side(style="thin", color="BFBFBF")
@@ -158,6 +158,27 @@ def build_coverage_sheet(wb, coverage):
             c.alignment = wrap
             c.border = border
         row += 1
+
+    # 功能 ↔ 用例（研发核对每个功能的验证用例）
+    if cases:
+        by_func = {}
+        for c in cases:
+            by_func.setdefault(c.get("function", "?"), []).append(c.get("case_id", ""))
+        if by_func:
+            row += 1
+            ws.cell(row=row, column=1, value="功能 ↔ 用例（每个功能被哪些用例验证）").font = bold
+            row += 1
+            for col, h in enumerate(["功能", "用例编号"], start=1):
+                c = ws.cell(row=row, column=col, value=h)
+                c.font = bold
+                c.border = border
+            row += 1
+            for fn in sorted(by_func):
+                ws.cell(row=row, column=1, value=fn).border = border
+                cell = ws.cell(row=row, column=2, value="\n".join(by_func[fn]))
+                cell.alignment = wrap
+                cell.border = border
+                row += 1
 
     # ---- 区 3：标注区（缺口 / 无法验证 / 规则缺口 合并） ----
     row += 1
@@ -278,7 +299,7 @@ def main():
 
     wb = build_workbook(cases)
     if coverage:
-        build_coverage_sheet(wb, coverage)
+        build_coverage_sheet(wb, coverage, cases)
     wb.save(out)
     extra = "（含「覆盖说明」sheet）" if coverage else ""
     print(f"已生成 {len(cases)} 条用例{extra} -> {out}")
