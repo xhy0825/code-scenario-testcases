@@ -1,2 +1,5 @@
 __pycache__/
 *.pyc
+
+# 运行时产出的自测用例（不入库）
+testcase/
