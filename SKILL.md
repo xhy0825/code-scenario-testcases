@@ -109,3 +109,4 @@ description: 根据业务代码生成研发自测用例 Excel 表格：把业务
 - 单个函数条件较多时按执行顺序编号，保证可追溯
 - 语言差异只影响入口识别与语法写法（`references/language-guide.md`），用例生成逻辑统一
 - 所有 rules 的展开、边界、状态机等细节，以 `references/code-snippet-templates.md` 与 `references/rule-gap-checklist.md` 为准
+- **执行边界**：扫描/识别/展开时主动收敛（排除生成代码、样板类、非代码文件；限制调用链/嵌套/原子数/用例数上限），详见 `references/execution-boundaries.md`，避免过度执行
