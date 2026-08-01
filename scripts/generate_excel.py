@@ -94,6 +94,23 @@ def build_coverage_sheet(wb, coverage):
         ws.cell(row=row, column=2, value=val).border = border
         row += 1
 
+    # 功能覆盖清单（研发视角：每个功能必须有 ≥1 条用例）
+    per_function = (coverage or {}).get("per_function") if isinstance(coverage, dict) else None
+    if per_function:
+        row += 1
+        ws.cell(row=row, column=1, value="功能覆盖清单（每个功能必须有 ≥1 条用例）").font = bold
+        row += 1
+        for col, h in enumerate(["功能", "判定点覆盖"], start=1):
+            c = ws.cell(row=row, column=col, value=h)
+            c.font = bold
+            c.border = border
+        row += 1
+        for fn, st in per_function.items():
+            ws.cell(row=row, column=1, value=fn).border = border
+            ws.cell(row=row, column=2,
+                    value=f"{st.get('dp_covered', 0)}/{st.get('dp_total', 0)}").border = border
+            row += 1
+
     row += 1
     ws.cell(row=row, column=1, value="变更范围").font = bold
     row += 1
