@@ -73,6 +73,22 @@
 - 循环内 `if` + `break`/`continue` → 记为该循环的一次判定
 - `try/catch`（Java/C#/Python/JS）→ catch 分支可视为"异常路径"判定，生成一条用例，预期结果写捕获后的行为（如错误响应、降级文案）
 
+## 隐含条件识别清单
+
+除了显式 `if/else/switch`，还要识别以下"隐含条件"并生成对应用例（否则是漏测）：
+
+| 隐含条件 | 识别特征 | 示例 |
+|---|---|---|
+| lambda / stream / 推导式内条件 | Java `filter/map` lambda、Python 列表推导 `if`、Go 无 | `list.stream().filter(x -> x.getPrice() > 0)` |
+| 异常路径 | `try/catch`、`except`、Go 多返回值 `if err != nil` | `catch (Exception e) { return error(...) }` |
+| 判空 / 可选链 | Java `Objects.isNull`、JS/Kotlin `?.`、`??`、Python `if x is None` | `a?.b?.c ?? "默认"` |
+| 类型判断 / 转换 | Java `instanceof`、Python `isinstance`、Go 类型断言 `x.(T)` | `if (obj instanceof User)` |
+| switch fall-through / 多 case 合并 | `case 1: case 2:`、Go `case 1, 2:` | `case 1: case 2: doX()` |
+| 集合空 / 大小 / 越界 | `.isEmpty()`、`.length() == 0`、`len(...)` | `if (list.isEmpty())` |
+| 字符串匹配 / 判空 | `.isEmpty()`、`== ""`、`.matches(...)` | `if (name == null \|\| name.isEmpty())` |
+
+> 复合条件（`&&`/`||`）里的每个原子条件都要能对应到一条用例（详见 SKILL.md 第 3 步规则 5）。枚举脚本会对条件行打 `compound` 标记辅助核对。
+
 ## 注释与信息提取
 
 - 读取中文注释、字段名、错误常量可辅助推断业务语义与预期结果文案
