@@ -136,11 +136,13 @@ switch (payType)       → wechat / alipay / 支付方式不支持       // 条�
 code-scenario-testcases/
 ├── SKILL.md                        # 技能主体：工作流程 + 字段规则 + 调用方式
 ├── references/
-│   └── language-guide.md           # 语言适配参考（按需加载）
-│       ├── 文件扩展名 → 语言映射
-│       ├── 各语言"功能入口"识别启发式
-│       ├── 条件分支语法对照表
-│       └── 判定点统一建模规则
+│   ├── language-guide.md           # 语言适配参考（按需加载）
+│   │   ├── 文件扩展名 → 语言映射
+│   │   ├── 各语言"功能入口"识别启发式
+│   │   ├── 条件分支语法对照表
+│   │   ├── 判定点统一建模规则
+│   │   └── 隐含条件识别清单（lambda/try-catch/可选链/类型判断等）
+│   └── code-snippet-templates.md   # 代码片段→用例模板参考（13 类条件结构场景）
 ├── scripts/
 │   ├── generate_excel.py            # 结构化 JSON → Excel 生成脚本
 │   │   ├── 主 sheet（11 列 + 样式 + 筛选 + 冻结首行）
@@ -264,6 +266,8 @@ code-scenario-testcases/
 - **粘贴的代码片段**：直接贴进对话
 
 未指定范围时默认全目录扫描，并在汇报中说明覆盖范围。
+
+> **代码片段 → 用例模板参考**：生成用例时，skill 会对照 `references/code-snippet-templates.md` 的 **13 类条件结构模板**（简单 if、if-else、多路链、嵌套、switch、复合条件、三目、循环内条件、边界比较、状态机、try/catch、判空、多 case 合并/类型判断）定位片段类型并套用展开，每个模板都给出"代码片段 + 判定点分析 + 用例表格"。多结构叠加时再按第 3 步规则（嵌套不笛卡尔积、复合拆原子、边界补值）合并。
 
 ### 3.4 使用示例
 
