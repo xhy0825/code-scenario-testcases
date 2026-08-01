@@ -71,7 +71,7 @@ def load_data(path):
 
 
 def build_coverage_sheet(wb, coverage):
-    """在同一工作簿新增「覆盖说明」sheet：覆盖统计 + 追溯矩阵 + 缺口 + 无法静态验证项。"""
+    """在同一工作簿新增「覆盖说明」sheet：覆盖统计（含变更范围）+ 追溯矩阵 + 标注区（缺口/无法验证/规则缺口）。"""
     ws = wb.create_sheet("覆盖说明")
     thin = Side(style="thin", color="BFBFBF")
     border = Border(left=thin, right=thin, top=thin, bottom=thin)
@@ -122,18 +122,6 @@ def build_coverage_sheet(wb, coverage):
                 row += 1
 
     row += 1
-    ws.cell(row=row, column=1, value="缺口（未达 100% 的项）").font = bold
-    row += 1
-    uncovered = (coverage or {}).get("uncovered") or []
-    if uncovered:
-        for item in uncovered:
-            ws.cell(row=row, column=1, value=item).alignment = wrap
-            row += 1
-    else:
-        ws.cell(row=row, column=1, value="无（代码可表达范围内已全覆盖）").alignment = wrap
-        row += 1
-
-    row += 1
     ws.cell(row=row, column=1, value="判定点 → 用例 追溯矩阵").font = bold
     row += 1
     for col, h in enumerate(["功能", "判定点", "代码位置", "分支 → 用例编号"], start=1):
@@ -154,28 +142,24 @@ def build_coverage_sheet(wb, coverage):
             c.border = border
         row += 1
 
+    # ---- 区 3：标注区（缺口 / 无法验证 / 规则缺口 合并） ----
     row += 1
-    ws.cell(row=row, column=1, value="无法静态验证项（已标注，不参与覆盖统计）").font = bold
+    ws.cell(row=row, column=1, value="标注区（缺口 / 无法静态验证 / 规则缺口）").font = bold
     row += 1
-    notes = (coverage or {}).get("notes") or []
-    if not notes:
-        ws.cell(row=row, column=1, value="无").alignment = wrap
+    items = []
+    for u in (coverage or {}).get("uncovered") or []:
+        items.append(f"【缺口】{u}")
+    for n in (coverage or {}).get("notes") or []:
+        items.append(f"【无法验证】{n}")
+    for g in (coverage or {}).get("rule_gaps") or []:
+        if isinstance(g, dict):
+            g = f"{g.get('category', '')}: {g.get('gap', '')}（{g.get('function', '')}，建议确认：{g.get('confirm_with', '')}）"
+        items.append(f"【规则缺口】{g}")
+    if not items:
+        ws.cell(row=row, column=1, value="无（代码可表达范围内已全覆盖，无额外标注）").alignment = wrap
     else:
-        for note in notes:
-            ws.cell(row=row, column=1, value=note).alignment = wrap
-            row += 1
-
-    row += 1
-    ws.cell(row=row, column=1, value="规则缺口（疑似缺失的业务规则，不参与覆盖统计）").font = bold
-    row += 1
-    gaps = (coverage or {}).get("rule_gaps") or []
-    if not gaps:
-        ws.cell(row=row, column=1, value="无").alignment = wrap
-    else:
-        for gap in gaps:
-            if isinstance(gap, dict):
-                gap = f"{gap.get('category', '')}: {gap.get('gap', '')}（{gap.get('function', '')}，建议确认：{gap.get('confirm_with', '')}）"
-            ws.cell(row=row, column=1, value=gap).alignment = wrap
+        for it in items:
+            ws.cell(row=row, column=1, value=it).alignment = wrap
             row += 1
 
     ws.column_dimensions["A"].width = 28
