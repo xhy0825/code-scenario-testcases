@@ -333,6 +333,47 @@ if (obj instanceof User) { ... } else if (obj instanceof Admin) { ... }
 
 ---
 
+## 综合案例：下单结算（复合 + 循环 + 嵌套 组合展开）
+
+真实业务通常是多种结构叠加，下面演示如何套用多个场景模板合并展开：
+
+**代码片段（Python）：**
+```python
+def checkout(req):
+    if req.cart is None or len(req.cart) == 0:          # 场景12 判空 + 场景6 复合
+        raise HTTPException(400, "购物车为空")
+    total = 0
+    for item in req.cart:                               # 场景8 循环
+        if item.quantity <= 0:                          # 场景9 边界
+            raise HTTPException(400, "商品数量不合法")
+        total += item.price * item.quantity
+    if req.coupon_code:                                 # 场景4 嵌套外层
+        coupon = get_coupon(req.coupon_code)
+        if coupon is None:                              # 场景4 嵌套内层
+            raise HTTPException(400, "优惠券不存在")
+    return create_order(total)
+```
+
+**展开要点：**
+1. 复合 + 判空 → 成功 1 条 + 每个原子不满足各 1 条（`cart=None`、`cart=[]`）
+2. 循环内数量校验 → 真/假 + 边界（`quantity=0/1`）
+3. 嵌套优惠券 → 外层真/假 + 内层真/假（内层用例前置条件写 `coupon_code` 非空，不笛卡尔积）
+4. 空购物车、数量边界归 P2
+
+**合并用例清单（节选）：**
+
+| 用例编号 | 功能 | 用例名称 | 前置条件 | 操作步骤 | 优先级 | 预期结果 | 备注 |
+|---|---|---|---|---|---|---|---|
+| TC-001 | 下单结算 | 购物车为空对象 | 调用结算接口 | 传 cart=null | P0 | 400"购物车为空" | 复合原子1(null)；代码摘录 |
+| TC-002 | 下单结算 | 购物车空列表 | 调用结算接口 | 传 cart=[] | P0 | 400"购物车为空" | 复合原子2(isEmpty)；边界 |
+| TC-003 | 下单结算 | 数量不合法 | 购物车含 quantity<=0 | 提交订单 | P0 | 400"商品数量不合法" | 循环内；边界 quantity=0 |
+| TC-004 | 下单结算 | 正常累加 | 购物车商品合法 | 提交订单 | P1 | total 正确累加 | 循环内条件全假；推断 |
+| TC-005 | 下单结算 | 不用优惠券 | coupon_code 空 | 提交订单 | P1 | 跳过优惠券逻辑 | 嵌套外层假 |
+| TC-006 | 下单结算 | 优惠券不存在 | coupon_code 非空、券不存在 | 提交订单 | P1 | 400"优惠券不存在" | 嵌套内层真；代码摘录 |
+| TC-007 | 下单结算 | 优惠券有效 | coupon_code 非空、券存在 | 提交订单 | P1 | 走折扣逻辑 | 嵌套内层假；推断 |
+
+> 提示：`enumerate_decision_points.py` 会对 `&&`/`||`（及 Python `and`/`or`）标记 `compound=true`、对比较运算标记 `boundary=true`，可辅助核对每个复合/边界判定点是否都展开了。
+
 ## 使用指引
 
 1. 从被测代码中找到片段 → 对照上表定位**场景类型**（可叠加：嵌套+复合+边界、循环+判空等）

@@ -91,7 +91,11 @@ def classify(lang: str, cleaned: str, line_no: int):
         if m:
             # 文本：取该行自匹配起点到行尾前 60 字符
             text = cleaned[m.start():m.start() + 60].strip()
-            compound = bool(COMPOUND_RE.search(cleaned))
+            # compound 标记：Python/Ruby 用 and/or，其余语言用 &&/||
+            if lang in ("python", "ruby"):
+                compound = bool(re.search(r"\band\b|\bor\b", cleaned))
+            else:
+                compound = bool(COMPOUND_RE.search(cleaned))
             boundary = False
             if dp_type in ("if", "elif", "switch", "match", "ternary"):
                 stripped = ARROW_RE.sub("", cleaned)
