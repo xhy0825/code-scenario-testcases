@@ -31,6 +31,7 @@
 | **需求/契约注入** | 调用时可附带需求描述/接口契约/验收标准，预期结果优先对照需求规则、代码仅作补充，发现"需求有规则、代码无实现"时标记疑似缺陷 |
 | **规则缺口审查** | 对照业务规则清单（`references/rule-gap-checklist.md`）反向审查，找出"该有却没有"的分支（金额/库存/权限/防重/并发/状态迁移等），单独列示、不虚增覆盖率 |
 | **输入约束分析** | 从参数约束注解（`@NotNull/@Min/@Max/@Pattern` 等）与类型生成等价类用例（合法/非法/边界/空），独立于分支覆盖测"代码隐含的输入约束" |
+| **外部契约建模** | 对依赖调用点（`xxxService/xxxDao/xxxClient`）建模**契约五态**（成功有效/成功空值/抛异常/超时/降级），mock 各状态生成分支用例，把"推断（需联调）"升级为确定性建模 |
 
 ### 1.2 产出物
 
@@ -149,6 +150,7 @@ code-scenario-testcases/
 │   ├── code-snippet-templates.md   # 代码片段→用例模板参考（13 类条件结构场景 + 资深审查要点）
 │   ├── rule-gap-checklist.md       # 业务规则缺口审查清单（反向审查，发现"该有却没有"的分支）
 │   ├── input-constraints.md        # 输入约束分析参考（参数约束注解对照 + 等价类生成）
+│   ├── external-contracts.md       # 外部契约建模参考（依赖调用五态：成功/空值/异常/超时/降级）
 │   └── help.md                     # 使用帮助（`-help` 指令输出）
 ├── scripts/
 │   ├── generate_excel.py            # 结构化 JSON → Excel 生成脚本
@@ -353,6 +355,7 @@ code-scenario-testcases -diff a1b2c3d
 | **v1.7** | 使用帮助 | 新增 `-help` 指令（输出 `references/help.md` 基本使用说明并结束，不扫描） |
 | **v1.8** | 执行边界 | 新增 `references/execution-boundaries.md`：排除生成代码/样板类/非代码文件，限制调用链/嵌套/原子数/用例数上限，避免过度执行 |
 | **v1.9** | 输入约束分析 | 新增 `references/input-constraints.md`：从参数约束注解（@NotNull/@Min/@Max/@Pattern 等）与类型生成等价类用例；枚举脚本识别约束注解计入 dp.json |
+| **v1.10** | 外部契约建模 | 新增 `references/external-contracts.md`：对依赖调用点建模契约五态（成功/空值/异常/超时/降级）；枚举脚本识别外部调用点计入 dp.json |
 
 ---
 

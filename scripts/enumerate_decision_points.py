@@ -70,6 +70,8 @@ COMPOUND_RE = re.compile(r"&&|\|\|")
 BOUNDARY_RE = re.compile(r">=|<=|===|!==|==|!=|<>|>|<")
 # 参数约束注解（Java Bean Validation / Jakarta 为主，其它语言映射见 references/input-constraints.md）
 CONSTRAINT_RE = re.compile(r"@(NotNull|NotBlank|NotEmpty|Min|Max|Size|Pattern|Email|Positive|Negative|DecimalMin|DecimalMax|Range|Length|MinLength|MaxLength)\b")
+# 外部依赖调用点（xxxService/xxxDao/xxxClient 等，见 references/external-contracts.md）
+EXTERNAL_CALL_RE = re.compile(r"\b\w+(Service|Dao|Repository|Client|Remote|Gateway|Api)\s*\.\s*\w+\(")
 # 剔除箭头函数 -> 对 boundary 的干扰
 ARROW_RE = re.compile(r"->|\w+\s*:\s*\w+\s*=>")
 
@@ -112,6 +114,7 @@ def scan_file(path: str):
         return None
     points = []
     constraints = []
+    external_calls = []
     try:
         with open(path, encoding="utf-8", errors="replace") as f:
             for line_no, raw in enumerate(f, start=1):
@@ -135,11 +138,18 @@ def scan_file(path: str):
                         "annotation": cm.group(1),
                         "text": cleaned.strip()[:60],
                     })
+                em = EXTERNAL_CALL_RE.search(cleaned)
+                if em:
+                    external_calls.append({
+                        "line": line_no,
+                        "type": "external_call",
+                        "text": cleaned.strip()[:60],
+                    })
     except OSError as e:
         print(f"warning: 无法读取 {path}: {e}", file=sys.stderr)
         return None
     return {"path": path.replace("\\", "/"), "language": lang,
-            "decision_points": points, "constraints": constraints}
+            "decision_points": points, "constraints": constraints, "external_calls": external_calls}
 
 
 def collect_files(path):
@@ -174,12 +184,14 @@ def main():
             total += len(info["decision_points"])
 
     const_total = sum(len(f.get("constraints") or []) for f in files)
+    ext_total = sum(len(f.get("external_calls") or []) for f in files)
     result = {
         "tool": "enumerate_decision_points",
         "generated": date.today().isoformat(),
         "scanned_files": len(files),
         "total_decision_points": total,
         "total_input_constraints": const_total,
+        "total_external_calls": ext_total,
         "files": files,
     }
     out = json.dumps(result, ensure_ascii=False, indent=2)
