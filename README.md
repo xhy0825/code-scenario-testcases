@@ -146,7 +146,8 @@ code-scenario-testcases/
 │   │   ├── 判定点统一建模规则
 │   │   └── 隐含条件识别清单（lambda/try-catch/可选链/类型判断等）
 │   ├── code-snippet-templates.md   # 代码片段→用例模板参考（13 类条件结构场景 + 资深审查要点）
-│   └── rule-gap-checklist.md       # 业务规则缺口审查清单（反向审查，发现"该有却没有"的分支）
+│   ├── rule-gap-checklist.md       # 业务规则缺口审查清单（反向审查，发现"该有却没有"的分支）
+│   └── help.md                     # 使用帮助（`-help` 指令输出）
 ├── scripts/
 │   ├── generate_excel.py            # 结构化 JSON → Excel 生成脚本
 │   │   ├── 主 sheet（11 列 + 样式 + 筛选 + 冻结首行）
@@ -256,6 +257,7 @@ code-scenario-testcases/
 | `code-scenario-testcases -all` | 全量扫描 | 整个目录的业务代码（默认行为） |
 | `code-scenario-testcases -diff` | 当前变更 | 仅未提交变更（工作区+暂存区+未跟踪新文件）涉及的代码 |
 | `code-scenario-testcases -diff [commitId]` | 指定提交之后 | 从 `[commitId]` 到当前（含未提交）的变更代码 |
+| `code-scenario-testcases -help` | 使用帮助 | 输出基本使用说明并结束（不扫描） |
 
 也支持自然语言触发，例如：
 
@@ -344,6 +346,7 @@ code-scenario-testcases -diff a1b2c3d
 | **v1.4** | 专业与模板 | 角色定位（资深研发自测架构师）；映射原则；代码片段→用例模板库（13 类场景 + 综合案例 + 资深审查要点） |
 | **v1.5** | 需求驱动 | 需求/契约注入；规则缺口审查（`rule-gap-checklist.md`，找出"该有却没有"的分支）；`testcase/` 分项目输出 |
 | **v1.6** | 简化重构 | SKILL.md 330→106 行（-68%）；三套分支规则合并为模板库唯一权威；覆盖说明 sheet 6 区→3 区；回归验证简化版 46/46 全过、耗时 -42.9s |
+| **v1.7** | 使用帮助 | 新增 `-help` 指令（输出 `references/help.md` 基本使用说明并结束，不扫描） |
 
 ---
 
