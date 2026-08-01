@@ -154,17 +154,22 @@ description: 根据业务代码生成研发自测用例 Excel 表格：把业务
 ### 第 5 步 生成 Excel
 
 1. 把全部用例整理成结构化 JSON：顶层含 `cases`（每行一条用例，字段名与上方表格的英文键一致）与 `coverage`（第 4 步整理的对象）
-2. 运行捆绑脚本：`python scripts/generate_excel.py cases.json [输出路径]`
-   - 脚本用 openpyxl 生成 `.xlsx`：主 sheet 含表头加粗+底色、自动列宽、冻结首行、带筛选；**测试结果列自带 PASS/FAIL 下拉**；备注列为自由文本
-   - 若 JSON 含 `coverage`，脚本额外生成**「覆盖说明」sheet**：覆盖统计、判定点→用例追溯矩阵、缺口列表、无法静态验证项
-   - 默认输出文件名 `研发自测用例_YYYYMMDD.xlsx`，用户可指定路径
+2. **输出到 skill 的 testcase 目录**：在 SKILL.md 所在目录（skill 安装目录）维护 `testcase/` 输出区——
+   - **多项目按项目名建子文件夹**：`<skill目录>/testcase/<项目名称>/`
+   - **文件命名**：`<项目名称>_<日期>_<版本>.xlsx`（如 `订单管理系统_20260801_v1.0.xlsx`）
+   - 版本默认 `v1.0`，用户可指定；日期取当天 `YYYYMMDD`
+   - 运行捆绑脚本：`python scripts/generate_excel.py cases.json --project-name "<项目名称>" [--version 1.0]`
+     - 脚本自动创建 `<skill目录>/testcase/<项目名称>/` 并按上述规则命名
+     - 脚本用 openpyxl 生成 `.xlsx`：主 sheet 含表头加粗+底色、自动列宽、冻结首行、带筛选；**测试结果列自带 PASS/FAIL 下拉**；备注列为自由文本
+     - 若 JSON 含 `coverage`，脚本额外生成**「覆盖说明」sheet**：覆盖统计、判定点→用例追溯矩阵、缺口列表、无法静态验证项
+   - 若任务明确指定了输出路径，遵循指定路径（测试/CI 场景）
 3. 环境缺 openpyxl 时，提示用户先执行 `pip install openpyxl`
 
 ### 第 6 步 汇报
 
 - 统计：业务场景数、功能数、用例总数，以及各场景/功能分布
 - **覆盖率汇报**：入口覆盖 X/Y、判定点覆盖 X/Y；未达 100% 时列出缺口；说明哪些项因代码无法表达而被显式排除
-- 给出 Excel 文件路径（含「覆盖说明」sheet）；用例较多时建议用户按场景/优先级筛选
+- 给出 Excel 文件路径（`<skill目录>/testcase/<项目名>/<项目名>_<日期>_<版本>.xlsx`，含「覆盖说明」sheet）；用例较多时建议用户按场景/优先级筛选
 
 ## 输出示例
 

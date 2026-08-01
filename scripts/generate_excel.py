@@ -30,8 +30,10 @@ coverage 对象（SKILL.md 第 4 步覆盖率核对产出，用于生成「覆�
 
 import argparse
 import json
+import re
 import sys
 from datetime import date
+from pathlib import Path
 
 try:
     from openpyxl import Workbook
@@ -228,10 +230,18 @@ def build_workbook(cases):
     return wb
 
 
+def safe_name(name):
+    """清理文件/目录名中的非法字符（Windows 不允许 \\/:*?\"<>|）。"""
+    return re.sub(r'[\\/:*?"<>|]', "_", str(name)).strip() or "testcase"
+
+
 def main():
     parser = argparse.ArgumentParser(description="Generate test-case Excel from JSON")
     parser.add_argument("input", help="Path to JSON file (array of cases or {\"cases\":[...]})")
-    parser.add_argument("output", nargs="?", help="Output .xlsx path")
+    parser.add_argument("output", nargs="?", help="Output .xlsx path（指定后覆盖自动命名）")
+    parser.add_argument("--project-name", default=None, help="项目名称，用于输出目录与文件名")
+    parser.add_argument("--version", default="v1.0", help="版本号，默认 v1.0")
+    parser.add_argument("--output-dir", default="testcase", help="输出根目录（默认 testcase），其下按项目名建子目录")
     args = parser.parse_args()
 
     data = load_data(args.input)
@@ -240,7 +250,18 @@ def main():
     else:
         cases, coverage = data, None
 
-    out = args.output or f"研发自测用例_{date.today():%Y%m%d}.xlsx"
+    if args.output:
+        out = args.output
+    else:
+        project = safe_name(args.project_name or "研发自测用例")
+        version = str(args.version)
+        if not version.startswith("v"):
+            version = f"v{version}"
+        fname = f"{project}_{date.today():%Y%m%d}_{version}.xlsx"
+        out_dir = Path(args.output_dir) / project
+        out_dir.mkdir(parents=True, exist_ok=True)
+        out = str(out_dir / fname)
+
     wb = build_workbook(cases)
     if coverage:
         build_coverage_sheet(wb, coverage)
