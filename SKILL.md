@@ -23,12 +23,14 @@ description: 根据业务代码生成研发自测用例 Excel 表格：把业务
 
 ## 调用方式
 
-| 指令 | 扫描范围 |
+| 指令 | 说明 |
 |---|---|
-| `code-scenario-testcases -all` | 整个目录（默认） |
-| `code-scenario-testcases -diff` | 未提交变更（`git diff HEAD` + 未跟踪新文件） |
-| `code-scenario-testcases -diff [commitId]` | 该提交之后到当前（`git diff commitId`） |
+| `code-scenario-testcases -all` | 全量扫描整个目录（默认） |
+| `code-scenario-testcases -diff` | 只分析未提交变更（`git diff HEAD` + 未跟踪新文件） |
+| `code-scenario-testcases -diff [commitId]` | 分析该提交之后到当前（`git diff commitId`） |
+| `code-scenario-testcases -help` | 输出基本使用帮助并结束（不执行扫描） |
 
+- **检测到 `-help` 或用户询问"怎么用/有哪些指令"时**：直接输出 `references/help.md` 的内容并结束，不执行扫描流程
 - 非 git 仓库或无变更 → 回退全量扫描并说明
 - 定位**受影响函数**（变更行所在函数体），以整函数为单位生成完整分支用例（防回归）；`-diff` 额外 grep 变更函数调用方标记"间接受影响"
 
