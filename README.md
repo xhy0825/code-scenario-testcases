@@ -170,7 +170,7 @@ code-scenario-testcases/
 │   ├── generate_excel.py            # 结构化 JSON → Excel 生成脚本
 │   │   ├── 主 sheet（15 列 + 样式 + 筛选 + 冻结首行）
 │   │   ├── 测试结果列 PASS/FAIL 下拉（数据验证）
-│   │   └── 「覆盖说明」sheet（覆盖统计/可自动化分布/功能覆盖清单/变更范围/追溯矩阵/功能↔用例/标注区）
+│   │   └── 「覆盖说明」sheet（覆盖统计/可自动化分布/场景类型分布/功能覆盖清单/变更范围/追溯矩阵/功能↔用例/标注区）
 │   └── enumerate_decision_points.py # 确定性判定点枚举（覆盖率分母基准，多语言）
 └── evals/
     └── evals.json                  # 测试用例定义（5 个 eval，用于回归验证）
