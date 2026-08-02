@@ -75,7 +75,7 @@ COLUMN_WIDTHS = {
     "expected_result": 44, "test_result": 12, "remark": 30, "code_location": 18,
 }
 
-# ===== v1.22 样式常量：统一字体 + 行高自适应 + 斑马纹 + 优先级着色 =====
+# ===== v1.22 样式常量：统一字体 + 行高自适应 + 斑马纹 =====
 FONT_NAME = "微软雅黑"            # 中文字体（Excel 渲染友好，跨平台回退）
 FONT_SIZE = 10
 HEADER_FONT_SIZE = 11
@@ -83,7 +83,6 @@ HEADER_FILL = PatternFill("solid", fgColor="4472C4")       # 表头蓝（主表 
 SECTION_FILL = PatternFill("solid", fgColor="DDEBF7")      # 分节标题浅蓝
 BAND_FILL_EVEN = PatternFill("solid", fgColor="F2F7FB")    # 数据行斑马纹（偶数行浅蓝）
 BAND_FILL_ODD = PatternFill("solid", fgColor="FFFFFF")     # 数据行斑马纹（奇数行白）
-PRIORITY_COLORS = {"P0": "C00000", "P1": "BF8F00", "P2": "7F7F7F"}  # 优先级文字：P0 红 / P1 琥珀 / P2 灰
 SECTION_TITLE_COLOR = "1F4E79"   # 分节标题深蓝
 HEADER_ROW_HEIGHT = 28           # 表头行高（pt）
 LINE_HEIGHT = 16                 # 每行文字高度（pt）
@@ -340,21 +339,18 @@ def build_workbook(cases):
         cell.border = BORDER
     ws.row_dimensions[1].height = HEADER_ROW_HEIGHT
 
-    # 数据行（斑马纹 + 场景类型整行着色 + 优先级着色 + 行高自适应）
+    # 数据行（斑马纹 + 仅「场景类型」列着色 + 行高自适应；其余列文字保持默认黑）
     for row, case in enumerate(cases, start=2):
-        font_color = SCENARIO_TYPE_COLORS.get(case.get("scenario_type"))
+        st = case.get("scenario_type")
+        st_color = SCENARIO_TYPE_COLORS.get(st)  # 正常流程绿 / 异常流程红，其余列不着色
         band_fill = BAND_FILL_EVEN if row % 2 == 0 else BAND_FILL_ODD
-        priority = str(case.get("priority") or "").strip().upper()
-        pri_color = PRIORITY_COLORS.get(priority)
         for col, (key, _) in enumerate(COLUMNS, start=1):
             cell = ws.cell(row=row, column=col, value=to_cell_value(case.get(key)))
             cell.alignment = WRAP_TOP
             cell.border = BORDER
             cell.fill = band_fill
-            if key == "priority" and pri_color:
-                cell.font = Font(name=FONT_NAME, size=FONT_SIZE, bold=True, color=pri_color)
-            elif font_color:
-                cell.font = Font(name=FONT_NAME, size=FONT_SIZE, color=font_color)
+            if key == "scenario_type" and st_color:
+                cell.font = Font(name=FONT_NAME, size=FONT_SIZE, color=st_color)
             else:
                 cell.font = Font(name=FONT_NAME, size=FONT_SIZE)
         fit_row_height(ws, row, MAIN_WIDTH_MAP)

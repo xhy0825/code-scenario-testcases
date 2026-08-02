@@ -60,25 +60,13 @@ def _normalize_color(font_color):
     return str(rgb)[-6:].upper()
 
 
-def test_scenario_type_row_font_colors():
-    """v1.21+v1.22: 场景类型整行着色（正常绿/异常红）；优先级列 v1.22 起由优先级色覆盖。"""
+def test_scenario_type_column_color_only():
+    """v1.21+v1.22.1: 仅「场景类型」列着色——正常流程绿、异常流程红。"""
     wb = ge.build_workbook(SAMPLE_CASES)
     ws = wb["研发自测用例"]
-    ncols = len(ge.COLUMNS)
-    pri_col = ge.COLUMNS.index(("priority", "优先级")) + 1
-    for col in range(1, ncols + 1):
-        if col == pri_col:
-            continue  # 优先级列显示优先级色（见下方断言）
-        color = _normalize_color(ws.cell(row=2, column=col).font.color)
-        assert color == "008000", f"正常流程行第{col}列应为绿色(008000)，实际 {color}"
-        color = _normalize_color(ws.cell(row=3, column=col).font.color)
-        assert color == "FF0000", f"异常流程行第{col}列应为红色(FF0000)，实际 {color}"
-    # 场景类型列本身颜色一致
-    assert _normalize_color(ws.cell(row=2, column=5).font.color) == "008000"
-    assert _normalize_color(ws.cell(row=3, column=5).font.color) == "FF0000"
-    # 优先级列显示优先级色（样例两行都是 P0 → 红）
-    assert _normalize_color(ws.cell(row=2, column=pri_col).font.color) == "C00000"
-    assert _normalize_color(ws.cell(row=3, column=pri_col).font.color) == "C00000"
+    st_col = ge.COLUMNS.index(("scenario_type", "场景类型")) + 1
+    assert _normalize_color(ws.cell(row=2, column=st_col).font.color) == "008000"
+    assert _normalize_color(ws.cell(row=3, column=st_col).font.color) == "FF0000"
 
 
 def test_data_row_heights_set():
@@ -101,19 +89,18 @@ def test_banding_fill():
     assert f3 == "FFFFFF", f"奇数行应为白 FFFFFF，实际 {f3}"
 
 
-def test_priority_text_colors():
-    """v1.22: 优先级文字着色——P0 红、P1 琥珀、P2 灰，突出高风险。"""
-    p_cases = [
-        {"case_id": "T1", "scenario_type": "正常流程", "priority": "P0"},
-        {"case_id": "T2", "scenario_type": "正常流程", "priority": "P1"},
-        {"case_id": "T3", "scenario_type": "正常流程", "priority": "P2"},
-    ]
-    wb = ge.build_workbook(p_cases)
+def test_other_columns_default_black():
+    """v1.22.1: 除场景类型列外，其他所有列（含优先级）文字均保持默认黑色。"""
+    wb = ge.build_workbook(SAMPLE_CASES)
     ws = wb["研发自测用例"]
-    pri_col = ge.COLUMNS.index(("priority", "优先级")) + 1
-    for i, exp in zip(range(2, 5), ("C00000", "BF8F00", "7F7F7F")):
-        color = _normalize_color(ws.cell(row=i, column=pri_col).font.color)
-        assert color == exp, f"优先级 {ws.cell(row=i, column=pri_col).value} 应为 {exp}，实际 {color}"
+    st_col = ge.COLUMNS.index(("scenario_type", "场景类型")) + 1
+    ncols = len(ge.COLUMNS)
+    for r in range(2, 2 + len(SAMPLE_CASES)):
+        for col in range(1, ncols + 1):
+            if col == st_col:
+                continue
+            color = _normalize_color(ws.cell(row=r, column=col).font.color)
+            assert color is None, f"第{r}行第{col}列应默认黑（无显式色），实际 {color}"
 
 
 def test_coverage_sheet_row_heights():
