@@ -76,7 +76,9 @@
 | 文件 | 改动 |
 |---|---|
 | `SKILL.md` | 第 3 步字段表「前置条件」「预期结果」两行；字段质量自检 10→12 条（新增 11/12）；输出示例表；附录人工自测模板；措辞同步（"前置条件可构造" → "前置条件带触发方式前缀"等） |
-| `references/code-snippet-templates.md` | 13 类条件结构模板 + 综合案例：每条示例的前置条件加 `[页面触发]`/`[mock数据]` 前缀、预期结果改 `UI显示:...;数据结果:...` 双部分；通用用例列说明同步 |
+| `references/code-snippet-templates.md` | 13 类条件结构模板 + 综合案例：每条示例的前置条件加 `[页面触发]`/`[mock数据]` 前缀、预期结果改 `UI显示:...;数据结果:...` 双部分；通用用例列说明同步（46 条示例用例行） |
+| `references/input-constraints.md` | 示例用例表 5 条（TC-001~005）前置条件加 `[mock数据]` 前缀（输入约束用例均走接口调用）、预期结果改双部分；文件头部"前置条件/预期结果"措辞同步 |
+| `references/external-contracts.md` | 示例用例表 4 条（TC-001~004）前置条件加 `[mock数据]` 前缀（外部契约用例均 mock 依赖）、预期结果改双部分；生成规则中的"前置条件 = / 预期结果 = "措辞同步 |
 | `README.md` | §1.1 能力表（预期结果行/前置条件相关行）、§1.2 主 sheet 列说明（前置条件/预期结果两行）、§2.3 cases.json 示例（precondition/expected_result 值）、§2.4 关键设计决策加一行、更新日志加 v1.20 |
 | `scripts/generate_excel.py` | **不改**（列结构不变，仅列内内容规范） |
 | `evals/evals.json` | **不改**（eval 断言只查"前置条件和预期结果字段均非空"，新格式仍满足） |
@@ -88,14 +90,14 @@
 - 不把预期结果拆成两列（用户明确选择列内双部分方案）
 - 不改 `scripts/generate_excel.py`（无列结构变化，无需数据验证下拉/宽度调整）
 - 不改 `evals/evals.json`（断言不受影响）
-- 不改其他 references（`verification-points.md`、`input-constraints.md`、`external-contracts.md` 等，均不涉及前置条件/预期结果格式模板）
+- 不改其他 references（`verification-points.md`、`language-guide.md`、`rule-gap-checklist.md`、`advanced-dimensions.md`、`execution-boundaries.md`、`help.md`——均不含用例级前置条件/预期结果格式模板；`language-guide.md` 中"错误串原样摘录进预期结果"的说明为通则，不受列格式影响）
 
 ## 验证标准
 
-前置基线：`references/code-snippet-templates.md` 现有 **46 条示例用例行**（`^| TC-` 计数），需全部同步。
+前置基线：三个模板文件共 **55 条示例用例行**需全部同步 —— `code-snippet-templates.md` 46 条（`^| TC-` 计数）+ `input-constraints.md` 5 条（TC-001~005）+ `external-contracts.md` 4 条（TC-001~004）。
 
-1. `grep -c "UI显示:" references/code-snippet-templates.md` = 46（13 类 + 综合案例，每条示例用例的预期结果含 `UI显示:` 与 `数据结果:` 双部分）
-2. `grep -c "\[页面触发\]\|\[mock数据\]" references/code-snippet-templates.md` = 46（每条示例用例的前置条件含触发方式前缀）
+1. `grep -c "UI显示:" references/code-snippet-templates.md references/input-constraints.md references/external-contracts.md` = 55（每条示例用例的预期结果含 `UI显示:` 与 `数据结果:` 双部分）
+2. `grep -c "\[页面触发\]\|\[mock数据\]" references/code-snippet-templates.md references/input-constraints.md references/external-contracts.md` = 55（每条示例用例的前置条件含触发方式前缀）
 3. SKILL.md 字段质量自检含 11/12 两条；自检条数描述 10→12
 4. `grep -n "14 列\|9 条\|10 条" SKILL.md README.md` 无残留旧数字（历史更新日志除外）
 5. 跑真实 skill 于 `D:/AgentDev/fixtures/order-java` 抽查：主 sheet 前置条件列均以 `[页面触发]`/`[mock数据]` 开头，预期结果列均含 `UI显示:` 与 `数据结果:` 两部分
@@ -103,4 +105,4 @@
 
 ## 变更日志条目（预填）
 
-> **v1.20** | 前置条件触发方式 + 预期结果双结果 | 前置条件列强制以 `[页面触发]`/`[mock数据]` 开头明确触发方式；预期结果列强制分离 `UI显示:`（页面/客户端现象）与 `数据结果:`（接口/数据/状态变化），纯接口/纯展示显式标注；字段质量自检 10→12 条；references 13 类模板全部同步新格式
+> **v1.20** | 前置条件触发方式 + 预期结果双结果 | 前置条件列强制以 `[页面触发]`/`[mock数据]` 开头明确触发方式；预期结果列强制分离 `UI显示:`（页面/客户端现象）与 `数据结果:`（接口/数据/状态变化），纯接口/纯展示显式标注；字段质量自检 10→12 条；references 模板全部同步新格式（code-snippet-templates 13 类 + input-constraints + external-contracts）
