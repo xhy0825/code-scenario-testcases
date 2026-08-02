@@ -12,6 +12,8 @@
 | `code-scenario-testcases -diff` | 只分析**当前未提交**的变更（工作区/暂存区/新文件） |
 | `code-scenario-testcases -diff [commitId]` | 分析**该提交之后到当前**的变更（适合"上个版本后我改了什么就测什么"） |
 | `code-scenario-testcases -doc` | **仅生成当前项目文档**（6 份版本化 doc：项目背景/需求分析/架构设计/业务流程/功能清单/使用场景），不生成用例 Excel |
+| `code-scenario-testcases -doc -diff` | **仅按变更更新文档版本号**：按 `git diff` 判断，有实质变化的主题文档版本 +1、无变化复用当前版本；不生成用例 Excel |
+| `code-scenario-testcases -xlsx` | **只生成 Excel，跳过文档**：跳过阶段0A（第 0.5 步），直接扫描生成用例 Excel，不产出 doc 文档 |
 | `code-scenario-testcases -help` | 显示本帮助 |
 
 ## 用法示例
@@ -20,8 +22,10 @@
 code-scenario-testcases -all
 code-scenario-testcases -diff
 code-scenario-testcases -diff a1b2c3d
-code-scenario-testcases -doc        # 只产出 testcase/<项目名>/doc/ 下 6 份版本化文档
-code-scenario-testcases -all        # 可附加需求/验收标准，触发规则缺口审查
+code-scenario-testcases -doc            # 只产出 testcase/<项目名>/doc/ 下 6 份版本化文档
+code-scenario-testcases -doc -diff      # 只按变更更新文档版本号（有变化主题 +1、无变化复用）
+code-scenario-testcases -xlsx           # 跳过文档，只生成用例 Excel
+code-scenario-testcases -all            # 可附加需求/验收标准，触发规则缺口审查
 ```
 
 **输入方式**：代码目录（推荐）/ 单个文件 / 单个函数 / 直接粘贴代码片段。

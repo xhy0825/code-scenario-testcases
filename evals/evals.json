@@ -127,6 +127,35 @@
         {"text": "未生成测试用例 Excel（.xlsx）"},
         {"text": "需求分析文档覆盖了订单相关业务规则"}
       ]
+    },
+    {
+      "id": 7,
+      "name": "doc-diff-version-bump",
+      "prompt": "在 D:/AgentDev/fixtures/git-diff-order 目录下，使用命令 code-scenario-testcases -doc -diff 仅按变更更新项目文档版本号（阶段0A 第0.5步，基于 git diff 判断：有实质变化的主题文档版本 +1、无变化复用当前版本），保存到工作目录，不生成测试用例 Excel。",
+      "expected_output": "生成/更新 6 份版本化 Markdown 文档到 doc/，文档含统一头部（版本/生成时间/信息来源/项目），文档文件名带版本号；不生成测试用例 Excel",
+      "files": ["D:/AgentDev/fixtures/git-diff-order"],
+      "assertions": [
+        {"text": "生成了项目文档目录 doc/"},
+        {"text": "文档文件名带版本号（_v 开头）"},
+        {"text": "文档含统一头部（版本 / 生成时间 / 信息来源 / 项目）"},
+        {"text": "未生成测试用例 Excel（.xlsx）"},
+        {"text": "需求分析文档覆盖了订单相关业务规则"}
+      ]
+    },
+    {
+      "id": 8,
+      "name": "xlsx-skip-docs",
+      "prompt": "在 D:/AgentDev/fixtures/git-diff-order 目录下，使用命令 code-scenario-testcases -xlsx 只生成测试用例 Excel（跳过阶段0A 文档产出），按 skill 流程处理变更范围与受影响函数，包含前置条件和预期结果，保存到工作目录。",
+      "expected_output": "生成 .xlsx（含覆盖说明 sheet），覆盖受影响函数（创建订单）的判定点分支；不产出 doc/ 文档（或覆盖说明标注跳过阶段0A）",
+      "files": ["D:/AgentDev/fixtures/git-diff-order"],
+      "assertions": [
+        {"text": "生成了 .xlsx 用例表文件"},
+        {"text": "Excel 含「覆盖说明」sheet"},
+        {"text": "覆盖说明含覆盖率统计（入口覆盖/判定点覆盖）"},
+        {"text": "预期结果包含本次新增分支文案\"单笔订单金额超限\""},
+        {"text": "每条用例的前置条件和预期结果字段均非空"},
+        {"text": "表头包含测试结果列，且带 PASS/FAIL 下拉（数据验证）"}
+      ]
     }
   ]
 }
