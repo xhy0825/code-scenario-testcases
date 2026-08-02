@@ -11,6 +11,7 @@
 | `code-scenario-testcases -all` | 全量扫描指定目录，生成全部自测用例 |
 | `code-scenario-testcases -diff` | 只分析**当前未提交**的变更（工作区/暂存区/新文件） |
 | `code-scenario-testcases -diff [commitId]` | 分析**该提交之后到当前**的变更（适合"上个版本后我改了什么就测什么"） |
+| `code-scenario-testcases -doc` | **仅生成当前项目文档**（6 份版本化 doc：项目背景/需求分析/架构设计/业务流程/功能清单/使用场景），不生成用例 Excel |
 | `code-scenario-testcases -help` | 显示本帮助 |
 
 ## 用法示例
@@ -19,7 +20,8 @@
 code-scenario-testcases -all
 code-scenario-testcases -diff
 code-scenario-testcases -diff a1b2c3d
-code-scenario-testcases -all   # 可附加需求/验收标准，触发规则缺口审查
+code-scenario-testcases -doc        # 只产出 testcase/<项目名>/doc/ 下 6 份版本化文档
+code-scenario-testcases -all        # 可附加需求/验收标准，触发规则缺口审查
 ```
 
 **输入方式**：代码目录（推荐）/ 单个文件 / 单个函数 / 直接粘贴代码片段。
@@ -27,6 +29,7 @@ code-scenario-testcases -all   # 可附加需求/验收标准，触发规则缺�
 ## 输出
 
 - 自测用例 Excel：skill 安装目录的 `testcase/<项目名>/<项目名>_<日期>_<版本>.xlsx`
+- 前置项目文档（`-doc` / 各模式阶段0A）：`testcase/<项目名>/doc/` 下 6 份版本化 Markdown（项目背景/需求分析/架构设计/业务流程/功能清单/使用场景）
 - 「覆盖说明」sheet：覆盖统计（入口/判定点/需求验证点）、可自动化程度分布、验证点→用例追溯矩阵、标注区（缺口 / 验证缺口 / 无法静态验证 / 规则缺口）
 
 ## 核心能力

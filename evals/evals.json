@@ -112,6 +112,21 @@
         {"text": "表头包含备注列"},
         {"text": "受影响函数既有分支被回归覆盖（含\"用户不能为空\"/\"库存不足\"/\"支付方式不支持\"）"}
       ]
+    },
+    {
+      "id": 6,
+      "name": "doc-only-project-docs",
+      "prompt": "在 D:/AgentDev/fixtures/git-diff-order 目录下，使用命令 code-scenario-testcases -doc 仅生成当前项目文档（阶段0A 第0.5步：项目背景/需求分析/架构设计/业务流程/功能清单/使用场景 6 份版本化 Markdown），保存到工作目录，不生成测试用例 Excel。",
+      "expected_output": "生成 6 份版本化 Markdown 文档（项目背景/需求分析/架构设计/业务流程/功能清单/使用场景）到 testcase/<项目名>/doc/，文档含统一头部（版本/生成时间/信息来源/项目）；不生成测试用例 Excel",
+      "files": ["D:/AgentDev/fixtures/git-diff-order"],
+      "assertions": [
+        {"text": "生成了项目文档目录 doc/"},
+        {"text": "生成了 6 份文档：项目背景 / 需求分析 / 架构设计 / 业务流程 / 功能清单 / 使用场景"},
+        {"text": "文档含统一头部（版本 / 生成时间 / 信息来源 / 项目）"},
+        {"text": "文档文件名带版本号（_v 开头）"},
+        {"text": "未生成测试用例 Excel（.xlsx）"},
+        {"text": "需求分析文档覆盖了订单相关业务规则"}
+      ]
     }
   ]
 }
