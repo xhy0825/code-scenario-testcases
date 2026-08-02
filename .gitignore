@@ -3,3 +3,6 @@ __pycache__/
 
 # 运行时产出的自测用例（不入库）
 testcase/
+
+# 设计文档/实施计划（本地工作流产物，不入库）
+docs/superpowers/
