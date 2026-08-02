@@ -378,6 +378,7 @@ code-scenario-testcases -diff a1b2c3d
 | **v1.15** | 可观察性 | 字段质量自检扩至 8 条：预期单一可判定（禁"或"）、可观察对象=研发看到的、依赖未知先确认、mock 写明方式 |
 | **v1.15.1** | 修复 | 枚举脚本外部调用识别支持 Python snake_case（`stock_service` 等），不再漏识别 |
 | **v1.16** | 验证设计 | 定位升级为"面向验证设计"：四级结构（场景→功能→**验证点**→用例）；主 sheet 新增 验证点/验证方法/可自动化程度 三列（11→14 列）；覆盖模型新增需求验证点覆盖 X/Y 与可自动化程度分布；规则缺口强化为"需求验证点缺代码支撑"；汇报升级为验证计划（冒烟→回归→深度→联调）；新增 `references/verification-points.md`；质量自检禁止"前置=操作" |
+| **v1.16.1** | 提交即安装 | 新增 `install.sh` + `.git/hooks/post-commit`：每次 git commit 自动将 skill 源码部署到 Claude Code 运行时目录（`~/.claude/skills/code-scenario-testcases`），`testcase/` 保留不覆盖 |
 
 ---
 
