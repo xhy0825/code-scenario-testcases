@@ -173,7 +173,7 @@ code-scenario-testcases/
 │   ├── verification-points.md      # 验证点清单参考（验证点概念与识别：代码可测点 ∪ 需求验证点）
 │   ├── execution-boundaries.md     # 执行边界清单（排除生成代码/样板类，限制调用链/嵌套/原子数/用例数上限）
 │   ├── help.md                     # 使用帮助（`-help` 指令输出）
-│   └── project-docs.md           # 前置项目文档模板（阶段0A 产出 6 份版本化文档）
+│   └── project-docs.md             # 前置项目文档模板（阶段0A 产出 6 份版本化文档）
 ├── scripts/
 │   ├── generate_excel.py            # 结构化 JSON → Excel 生成脚本
 │   │   ├── 主 sheet（15 列 + 行高自适应/斑马纹/场景类型列着色 + 筛选 + 冻结首行）
