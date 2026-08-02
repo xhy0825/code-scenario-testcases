@@ -147,6 +147,7 @@ switch (payType)       → wechat / alipay / 支付方式不支持       // 条�
 ```
 code-scenario-testcases/
 ├── SKILL.md                        # 技能主体：工作流程 + 字段规则 + 调用方式
+├── install.sh                      # 一键部署到 Claude Code 运行时目录（git commit 后自动触发）
 ├── references/
 │   ├── language-guide.md           # 语言适配参考（按需加载）
 │   │   ├── 文件扩展名 → 语言映射
@@ -159,12 +160,14 @@ code-scenario-testcases/
 │   ├── input-constraints.md        # 输入约束分析参考（参数约束注解对照 + 等价类生成）
 │   ├── external-contracts.md       # 外部契约建模参考（依赖调用五态：成功/空值/异常/超时/降级）
 │   ├── advanced-dimensions.md      # 高级分析维度（数据流/null 传播、时间/时序/幂等、权限矩阵、容量/计算、MC/DC、业务链路）
+│   ├── verification-points.md      # 验证点清单参考（验证点概念与识别：代码可测点 ∪ 需求验证点）
+│   ├── execution-boundaries.md     # 执行边界清单（排除生成代码/样板类，限制调用链/嵌套/原子数/用例数上限）
 │   └── help.md                     # 使用帮助（`-help` 指令输出）
 ├── scripts/
 │   ├── generate_excel.py            # 结构化 JSON → Excel 生成脚本
-│   │   ├── 主 sheet（11 列 + 样式 + 筛选 + 冻结首行）
+│   │   ├── 主 sheet（14 列 + 样式 + 筛选 + 冻结首行）
 │   │   ├── 测试结果列 PASS/FAIL 下拉（数据验证）
-│   │   └── 「覆盖说明」sheet（统计/矩阵/缺口/变更范围/标注）
+│   │   └── 「覆盖说明」sheet（覆盖统计/可自动化分布/功能覆盖清单/变更范围/追溯矩阵/功能↔用例/标注区）
 │   └── enumerate_decision_points.py # 确定性判定点枚举（覆盖率分母基准，多语言）
 └── evals/
     └── evals.json                  # 测试用例定义（5 个 eval，用于回归验证）
