@@ -48,6 +48,7 @@ COLUMNS = [
     ("scenario", "业务场景"),
     ("function", "功能"),
     ("name", "用例名称"),
+    ("scenario_type", "场景类型"),
     ("verify_point", "验证点"),
     ("precondition", "前置条件"),
     ("steps", "操作步骤"),
@@ -62,7 +63,7 @@ COLUMNS = [
 
 # 每列宽度（近似，按最长表头/内容预估）
 COLUMN_WIDTHS = {
-    "case_id": 14, "scenario": 16, "function": 16, "name": 28,
+    "case_id": 14, "scenario": 16, "function": 16, "name": 28, "scenario_type": 12,
     "verify_point": 30, "precondition": 34, "steps": 42,
     "verify_method": 13, "auto_level": 15, "priority": 8,
     "expected_result": 44, "test_result": 12, "remark": 30, "code_location": 18,
@@ -109,6 +110,30 @@ def build_coverage_sheet(wb, coverage, cases=None):
             ws.cell(row=row, column=1, value=str(level)).border = border
             ws.cell(row=row, column=2, value=str(cnt)).border = border
             row += 1
+
+    # 场景类型分布（按功能统计正常/异常流程用例数）
+    if cases:
+        by_type = {}
+        for c in cases:
+            fn = c.get("function") or "?"
+            by_type.setdefault(fn, {"正常流程": 0, "异常流程": 0})
+            st = c.get("scenario_type")
+            if st in by_type[fn]:
+                by_type[fn][st] += 1
+        if by_type:
+            row += 1
+            ws.cell(row=row, column=1, value="场景类型分布（按功能统计正常/异常流程用例数）").font = bold
+            row += 1
+            for col, h in enumerate(["功能", "正常流程", "异常流程"], start=1):
+                c = ws.cell(row=row, column=col, value=h)
+                c.font = bold
+                c.border = border
+            row += 1
+            for fn in sorted(by_type):
+                ws.cell(row=row, column=1, value=fn).border = border
+                ws.cell(row=row, column=2, value=by_type[fn]["正常流程"]).border = border
+                ws.cell(row=row, column=3, value=by_type[fn]["异常流程"]).border = border
+                row += 1
 
     # 功能覆盖清单（研发视角：每个功能必须有 ≥1 条用例）
     per_function = (coverage or {}).get("per_function") if isinstance(coverage, dict) else None
@@ -279,6 +304,20 @@ def build_workbook(cases):
     dv.errorTitle = "无效输入"
     ws.add_data_validation(dv)
     dv.add(f"{test_letter}2:{test_letter}{max(ws.max_row, 200)}")
+
+    # 场景类型列：正常流程/异常流程 下拉（数据验证）
+    st_col = COLUMNS.index(("scenario_type", "场景类型")) + 1
+    st_letter = get_column_letter(st_col)
+    st_dv = DataValidation(
+        type="list",
+        formula1='"正常流程,异常流程"',
+        allow_blank=True,
+        showDropDown=False,
+    )
+    st_dv.error = "只能选择 正常流程 或 异常流程"
+    st_dv.errorTitle = "无效输入"
+    ws.add_data_validation(st_dv)
+    st_dv.add(f"{st_letter}2:{st_letter}{max(ws.max_row, 200)}")
 
     return wb
 
