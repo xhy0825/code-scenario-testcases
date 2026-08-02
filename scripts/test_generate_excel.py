@@ -46,6 +46,38 @@ def test_main_sheet_header_and_values():
     assert any("正常流程" in f and "异常流程" in f for f in dv_formulas), dv_formulas
 
 
+def _normalize_color(font_color):
+    """openpyxl 读回的字体色可能为 'RRGGBB'/'00RRGGBB'/'FFRRGGBB'，统一取后 6 位大写比较；
+    theme/indexed 等无 rgb 的颜色（默认黑）返回 None。"""
+    if font_color is None:
+        return None
+    try:
+        rgb = font_color.rgb
+    except Exception:
+        return None
+    if not rgb:
+        return None
+    return str(rgb)[-6:].upper()
+
+
+def test_scenario_type_row_font_colors():
+    """v1.21: 场景类型文字着色——正常流程整行绿色，异常流程整行红色。"""
+    wb = ge.build_workbook(SAMPLE_CASES)
+    ws = wb["研发自测用例"]
+    ncols = len(ge.COLUMNS)
+    # 正常流程行（row2）整行绿色
+    for col in range(1, ncols + 1):
+        color = _normalize_color(ws.cell(row=2, column=col).font.color)
+        assert color == "008000", f"正常流程行第{col}列应为绿色(008000)，实际 {color}"
+    # 异常流程行（row3）整行红色
+    for col in range(1, ncols + 1):
+        color = _normalize_color(ws.cell(row=3, column=col).font.color)
+        assert color == "FF0000", f"异常流程行第{col}列应为红色(FF0000)，实际 {color}"
+    # 场景类型列本身颜色一致
+    assert _normalize_color(ws.cell(row=2, column=5).font.color) == "008000"
+    assert _normalize_color(ws.cell(row=3, column=5).font.color) == "FF0000"
+
+
 def test_coverage_sheet_scenario_type_distribution():
     coverage = {
         "stats": {"entry_covered": 1, "entry_total": 1, "dp_covered": 2, "dp_total": 2},

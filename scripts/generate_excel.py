@@ -61,6 +61,12 @@ COLUMNS = [
     ("code_location", "代码位置"),
 ]
 
+# 场景类型文字着色（v1.21）：正常流程整行绿色、异常流程整行红色，便于目视区分成功/拒绝路径
+SCENARIO_TYPE_COLORS = {
+    "正常流程": "008000",  # 绿
+    "异常流程": "FF0000",  # 红
+}
+
 # 每列宽度（近似，按最长表头/内容预估）
 COLUMN_WIDTHS = {
     "case_id": 14, "scenario": 16, "function": 16, "name": 28, "scenario_type": 12,
@@ -277,13 +283,16 @@ def build_workbook(cases):
         cell.alignment = Alignment(vertical="center", horizontal="center")
         cell.border = border
 
-    # 数据行
+    # 数据行（按场景类型给整行字体着色：正常流程绿 / 异常流程红，未知或空保持默认黑）
     for row, case in enumerate(cases, start=2):
+        font_color = SCENARIO_TYPE_COLORS.get(case.get("scenario_type"))
         for col, (key, _) in enumerate(COLUMNS, start=1):
             value = to_cell_value(case.get(key))
             cell = ws.cell(row=row, column=col, value=value)
             cell.alignment = wrap
             cell.border = border
+            if font_color:
+                cell.font = Font(color=font_color)
 
     # 列宽 + 冻结首行 + 筛选
     for col, (key, _) in enumerate(COLUMNS, start=1):
