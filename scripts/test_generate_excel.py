@@ -61,21 +61,77 @@ def _normalize_color(font_color):
 
 
 def test_scenario_type_row_font_colors():
-    """v1.21: 场景类型文字着色——正常流程整行绿色，异常流程整行红色。"""
+    """v1.21+v1.22: 场景类型整行着色（正常绿/异常红）；优先级列 v1.22 起由优先级色覆盖。"""
     wb = ge.build_workbook(SAMPLE_CASES)
     ws = wb["研发自测用例"]
     ncols = len(ge.COLUMNS)
-    # 正常流程行（row2）整行绿色
+    pri_col = ge.COLUMNS.index(("priority", "优先级")) + 1
     for col in range(1, ncols + 1):
+        if col == pri_col:
+            continue  # 优先级列显示优先级色（见下方断言）
         color = _normalize_color(ws.cell(row=2, column=col).font.color)
         assert color == "008000", f"正常流程行第{col}列应为绿色(008000)，实际 {color}"
-    # 异常流程行（row3）整行红色
-    for col in range(1, ncols + 1):
         color = _normalize_color(ws.cell(row=3, column=col).font.color)
         assert color == "FF0000", f"异常流程行第{col}列应为红色(FF0000)，实际 {color}"
     # 场景类型列本身颜色一致
     assert _normalize_color(ws.cell(row=2, column=5).font.color) == "008000"
     assert _normalize_color(ws.cell(row=3, column=5).font.color) == "FF0000"
+    # 优先级列显示优先级色（样例两行都是 P0 → 红）
+    assert _normalize_color(ws.cell(row=2, column=pri_col).font.color) == "C00000"
+    assert _normalize_color(ws.cell(row=3, column=pri_col).font.color) == "C00000"
+
+
+def test_data_row_heights_set():
+    """v1.22: 表头/数据行行高已按内容自适应设置（保证换行内容完全显示）。"""
+    wb = ge.build_workbook(SAMPLE_CASES)
+    ws = wb["研发自测用例"]
+    assert ws.row_dimensions[1].height == 28, "表头行高应为 28"
+    for r in range(2, 2 + len(SAMPLE_CASES)):
+        h = ws.row_dimensions[r].height
+        assert h is not None and h >= 20, f"第{r}行行高未设置或过小：{h}"
+
+
+def test_banding_fill():
+    """v1.22: 数据行斑马纹——偶数行浅蓝、奇数行白，提升逐行可读性。"""
+    wb = ge.build_workbook(SAMPLE_CASES)
+    ws = wb["研发自测用例"]
+    f2 = str(ws.cell(row=2, column=1).fill.fgColor.rgb)[-6:].upper()
+    f3 = str(ws.cell(row=3, column=1).fill.fgColor.rgb)[-6:].upper()
+    assert f2 == "F2F7FB", f"偶数行应为浅蓝 F2F7FB，实际 {f2}"
+    assert f3 == "FFFFFF", f"奇数行应为白 FFFFFF，实际 {f3}"
+
+
+def test_priority_text_colors():
+    """v1.22: 优先级文字着色——P0 红、P1 琥珀、P2 灰，突出高风险。"""
+    p_cases = [
+        {"case_id": "T1", "scenario_type": "正常流程", "priority": "P0"},
+        {"case_id": "T2", "scenario_type": "正常流程", "priority": "P1"},
+        {"case_id": "T3", "scenario_type": "正常流程", "priority": "P2"},
+    ]
+    wb = ge.build_workbook(p_cases)
+    ws = wb["研发自测用例"]
+    pri_col = ge.COLUMNS.index(("priority", "优先级")) + 1
+    for i, exp in zip(range(2, 5), ("C00000", "BF8F00", "7F7F7F")):
+        color = _normalize_color(ws.cell(row=i, column=pri_col).font.color)
+        assert color == exp, f"优先级 {ws.cell(row=i, column=pri_col).value} 应为 {exp}，实际 {color}"
+
+
+def test_coverage_sheet_row_heights():
+    """v1.22: 覆盖说明 sheet 各行行高已按内容自适应设置。"""
+    coverage = {
+        "stats": {"entry_covered": 1, "entry_total": 1, "dp_covered": 2, "dp_total": 2},
+        "inventory": [{"function": "创建订单", "decision_point": "if (amount <= 0) throw",
+                       "line": "OrderService.java:3",
+                       "branches": ["真→TC-ORD-001 校验失败拒绝", "假→TC-ORD-002 继续执行"]}],
+        "uncovered": [], "notes": ["orderDao 为外部依赖，行为无法静态验证"],
+        "verification_gaps": [], "rule_gaps": [],
+    }
+    wb = ge.build_workbook(SAMPLE_CASES)
+    ge.build_coverage_sheet(wb, coverage, SAMPLE_CASES)
+    ws = wb["覆盖说明"]
+    heights = [rd.height for rd in ws.row_dimensions.values() if rd.height is not None]
+    assert heights, "覆盖说明 sheet 未设置任何行高"
+    assert all(h >= 20 for h in heights), heights
 
 
 def test_coverage_sheet_scenario_type_distribution():

@@ -75,46 +75,124 @@ COLUMN_WIDTHS = {
     "expected_result": 44, "test_result": 12, "remark": 30, "code_location": 18,
 }
 
+# ===== v1.22 样式常量：统一字体 + 行高自适应 + 斑马纹 + 优先级着色 =====
+FONT_NAME = "微软雅黑"            # 中文字体（Excel 渲染友好，跨平台回退）
+FONT_SIZE = 10
+HEADER_FONT_SIZE = 11
+HEADER_FILL = PatternFill("solid", fgColor="4472C4")       # 表头蓝（主表 + 覆盖说明子表）
+SECTION_FILL = PatternFill("solid", fgColor="DDEBF7")      # 分节标题浅蓝
+BAND_FILL_EVEN = PatternFill("solid", fgColor="F2F7FB")    # 数据行斑马纹（偶数行浅蓝）
+BAND_FILL_ODD = PatternFill("solid", fgColor="FFFFFF")     # 数据行斑马纹（奇数行白）
+PRIORITY_COLORS = {"P0": "C00000", "P1": "BF8F00", "P2": "7F7F7F"}  # 优先级文字：P0 红 / P1 琥珀 / P2 灰
+SECTION_TITLE_COLOR = "1F4E79"   # 分节标题深蓝
+HEADER_ROW_HEIGHT = 28           # 表头行高（pt）
+LINE_HEIGHT = 16                 # 每行文字高度（pt）
+MIN_ROW_HEIGHT = 22              # 数据行最小高度（pt）
+
+# 通用边框 / 对齐（模块级复用）
+_THIN = Side(style="thin", color="BFBFBF")
+BORDER = Border(left=_THIN, right=_THIN, top=_THIN, bottom=_THIN)
+WRAP_TOP = Alignment(wrap_text=True, vertical="top")
+CENTER = Alignment(vertical="center", horizontal="center")
+
+# 行高估算用的 列索引 → 列宽 映射
+MAIN_WIDTH_MAP = {i: COLUMN_WIDTHS.get(key, 20) for i, (key, _) in enumerate(COLUMNS, start=1)}
+COVERAGE_WIDTH_MAP = {1: 28, 2: 32, 3: 20, 4: 50}
+
+
+def _text_width(text):
+    """计算文本显示宽度：中文/全角字符占 2 个单位，其余占 1（近似 Excel 列宽单位）。"""
+    return sum(2 if ord(ch) > 0x2E7F else 1 for ch in text)
+
+
+def _chars_per_line(width):
+    """估算单行可容纳的显示宽度单位（列宽即宽度单位，留 1 单位余量防裁切）。"""
+    return max(int(width) - 1, 4)
+
+
+def _text_lines(text, width):
+    """估算文本按列宽换行后的行数（含显式换行分隔）。按显示宽度计算，贴合实际换行。"""
+    text = "" if text is None else str(text)
+    if not text:
+        return 1
+    cpl = _chars_per_line(width)
+    return sum(max(1, -(-_text_width(seg) // cpl)) for seg in text.split("\n"))
+
+
+def fit_row_height(ws, row, width_map):
+    """按行内容估算并设置行高，保证换行内容完全显示。width_map: {列索引: 列宽}。"""
+    max_lines = 1
+    for col_idx, width in width_map.items():
+        cell = ws.cell(row=row, column=col_idx)
+        if cell.value is None:
+            continue
+        max_lines = max(max_lines, _text_lines(cell.value, width))
+    ws.row_dimensions[row].height = max(MIN_ROW_HEIGHT, max_lines * LINE_HEIGHT + 4)
+
 
 def load_data(path):
     with open(path, encoding="utf-8") as f:
         return json.load(f)
 
 
+def write_section_title(ws, row, text, size=HEADER_FONT_SIZE):
+    """分节标题：浅蓝填充 + 加粗深蓝文字 + 自动换行。"""
+    c = ws.cell(row=row, column=1, value=text)
+    c.fill = SECTION_FILL
+    c.font = Font(name=FONT_NAME, size=size, bold=True, color=SECTION_TITLE_COLOR)
+    c.alignment = WRAP_TOP
+    return row
+
+
+def write_table_header(ws, row, headers, start=1):
+    """子表表头：蓝底白字加粗（与主 sheet 表头一致）。"""
+    for col, h in enumerate(headers, start=start):
+        c = ws.cell(row=row, column=col, value=h)
+        c.fill = HEADER_FILL
+        c.font = Font(name=FONT_NAME, size=FONT_SIZE, bold=True, color="FFFFFF")
+        c.alignment = CENTER
+        c.border = BORDER
+    return row
+
+
 def build_coverage_sheet(wb, coverage, cases=None):
     """在同一工作簿新增「覆盖说明」sheet：覆盖统计（含变更范围）+ 追溯矩阵 + 标注区（缺口/无法验证/规则缺口）。"""
     ws = wb.create_sheet("覆盖说明")
-    thin = Side(style="thin", color="BFBFBF")
-    border = Border(left=thin, right=thin, top=thin, bottom=thin)
-    wrap = Alignment(wrap_text=True, vertical="top")
-    bold = Font(bold=True)
+
+    def cset(row, col, value):
+        """写单元格：统一字体 + 边框 + 自动换行。"""
+        cell = ws.cell(row=row, column=col, value=value)
+        cell.font = Font(name=FONT_NAME, size=FONT_SIZE)
+        cell.border = BORDER
+        cell.alignment = WRAP_TOP
+        return cell
 
     row = 1
-    ws.cell(row=row, column=1, value="覆盖说明（代码可表达范围内）").font = Font(bold=True, size=12)
+    write_section_title(ws, row, "覆盖说明（代码可表达范围内）", size=12)
     row += 2
 
     stats = coverage.get("stats", {}) if isinstance(coverage, dict) else {}
-    ws.cell(row=row, column=1, value="覆盖统计").font = bold
+    write_section_title(ws, row, "覆盖统计")
     row += 1
     for label, covered, total in (
         ("业务入口覆盖", stats.get("entry_covered"), stats.get("entry_total")),
         ("判定点覆盖（机器基准）", stats.get("dp_covered"), stats.get("dp_total")),
         ("需求验证点覆盖", stats.get("verification_covered"), stats.get("verification_total")),
     ):
-        ws.cell(row=row, column=1, value=label).border = border
+        cset(row, 1, label)
         val = f"{covered}/{total}" if covered is not None and total is not None else ""
-        ws.cell(row=row, column=2, value=val).border = border
+        cset(row, 2, val)
         row += 1
 
     # 可自动化程度分布（验证计划编排依据）
     auto_dist = (coverage or {}).get("auto_level_distribution")
     if auto_dist:
         row += 1
-        ws.cell(row=row, column=1, value="可自动化程度分布").font = bold
+        write_section_title(ws, row, "可自动化程度分布")
         row += 1
         for level, cnt in auto_dist.items():
-            ws.cell(row=row, column=1, value=str(level)).border = border
-            ws.cell(row=row, column=2, value=str(cnt)).border = border
+            cset(row, 1, str(level))
+            cset(row, 2, str(cnt))
             row += 1
 
     # 场景类型分布（按功能统计正常/异常流程用例数）
@@ -128,38 +206,31 @@ def build_coverage_sheet(wb, coverage, cases=None):
                 by_type[fn][st] += 1
         if by_type:
             row += 1
-            ws.cell(row=row, column=1, value="场景类型分布（按功能统计正常/异常流程用例数）").font = bold
+            write_section_title(ws, row, "场景类型分布（按功能统计正常/异常流程用例数）")
             row += 1
-            for col, h in enumerate(["功能", "正常流程", "异常流程"], start=1):
-                c = ws.cell(row=row, column=col, value=h)
-                c.font = bold
-                c.border = border
+            write_table_header(ws, row, ["功能", "正常流程", "异常流程"])
             row += 1
             for fn in sorted(by_type):
-                ws.cell(row=row, column=1, value=fn).border = border
-                ws.cell(row=row, column=2, value=by_type[fn]["正常流程"]).border = border
-                ws.cell(row=row, column=3, value=by_type[fn]["异常流程"]).border = border
+                cset(row, 1, fn)
+                cset(row, 2, by_type[fn]["正常流程"])
+                cset(row, 3, by_type[fn]["异常流程"])
                 row += 1
 
     # 功能覆盖清单（研发视角：每个功能必须有 ≥1 条用例）
     per_function = (coverage or {}).get("per_function") if isinstance(coverage, dict) else None
     if per_function:
         row += 1
-        ws.cell(row=row, column=1, value="功能覆盖清单（每个功能必须有 ≥1 条用例）").font = bold
+        write_section_title(ws, row, "功能覆盖清单（每个功能必须有 ≥1 条用例）")
         row += 1
-        for col, h in enumerate(["功能", "判定点覆盖"], start=1):
-            c = ws.cell(row=row, column=col, value=h)
-            c.font = bold
-            c.border = border
+        write_table_header(ws, row, ["功能", "判定点覆盖"])
         row += 1
         for fn, st in per_function.items():
-            ws.cell(row=row, column=1, value=fn).border = border
-            ws.cell(row=row, column=2,
-                    value=f"{st.get('dp_covered', 0)}/{st.get('dp_total', 0)}").border = border
+            cset(row, 1, fn)
+            cset(row, 2, f"{st.get('dp_covered', 0)}/{st.get('dp_total', 0)}")
             row += 1
 
     row += 1
-    ws.cell(row=row, column=1, value="变更范围").font = bold
+    write_section_title(ws, row, "变更范围")
     row += 1
     change_scope = (coverage or {}).get("change_scope") if isinstance(coverage, dict) else None
     if change_scope:
@@ -170,8 +241,8 @@ def build_coverage_sheet(wb, coverage, cases=None):
             ("affected_decision_points_total", "受影响函数内判定点总数"),
         ):
             if change_scope.get(key) is not None:
-                ws.cell(row=row, column=1, value=label).border = border
-                ws.cell(row=row, column=2, value=change_scope.get(key)).border = border
+                cset(row, 1, label)
+                cset(row, 2, change_scope.get(key))
                 row += 1
         for key, label in (
             ("changed_files", "变更文件"),
@@ -179,31 +250,23 @@ def build_coverage_sheet(wb, coverage, cases=None):
             ("new_decision_points", "新增判定点"),
         ):
             if change_scope.get(key):
-                ws.cell(row=row, column=1, value=label).border = border
-                c = ws.cell(row=row, column=2, value="\n".join(change_scope[key]))
-                c.alignment = wrap
-                c.border = border
+                cset(row, 1, label)
+                cset(row, 2, "\n".join(change_scope[key]))
                 row += 1
 
     row += 1
-    ws.cell(row=row, column=1, value="判定点 → 用例 追溯矩阵").font = bold
+    write_section_title(ws, row, "判定点 → 用例 追溯矩阵")
     row += 1
-    for col, h in enumerate(["功能", "判定点", "代码位置", "分支 → 用例编号"], start=1):
-        c = ws.cell(row=row, column=col, value=h)
-        c.font = bold
-        c.border = border
+    write_table_header(ws, row, ["功能", "判定点", "代码位置", "分支 → 用例编号"])
     row += 1
     for item in (coverage or {}).get("inventory") or []:
         branches = item.get("branches") or []
         if isinstance(branches, list):
             branches = "\n".join(str(b) for b in branches)
-        for col, v in enumerate(
-            [item.get("function", ""), item.get("decision_point", ""), item.get("line", ""), branches],
-            start=1,
-        ):
-            c = ws.cell(row=row, column=col, value=v)
-            c.alignment = wrap
-            c.border = border
+        cset(row, 1, item.get("function", ""))
+        cset(row, 2, item.get("decision_point", ""))
+        cset(row, 3, item.get("line", ""))
+        cset(row, 4, branches)
         row += 1
 
     # 功能 ↔ 用例（研发核对每个功能的验证用例）
@@ -213,23 +276,18 @@ def build_coverage_sheet(wb, coverage, cases=None):
             by_func.setdefault(c.get("function", "?"), []).append(c.get("case_id", ""))
         if by_func:
             row += 1
-            ws.cell(row=row, column=1, value="功能 ↔ 用例（每个功能被哪些用例验证）").font = bold
+            write_section_title(ws, row, "功能 ↔ 用例（每个功能被哪些用例验证）")
             row += 1
-            for col, h in enumerate(["功能", "用例编号"], start=1):
-                c = ws.cell(row=row, column=col, value=h)
-                c.font = bold
-                c.border = border
+            write_table_header(ws, row, ["功能", "用例编号"])
             row += 1
             for fn in sorted(by_func):
-                ws.cell(row=row, column=1, value=fn).border = border
-                cell = ws.cell(row=row, column=2, value="\n".join(by_func[fn]))
-                cell.alignment = wrap
-                cell.border = border
+                cset(row, 1, fn)
+                cset(row, 2, "\n".join(by_func[fn]))
                 row += 1
 
-    # ---- 区 3：标注区（缺口 / 无法验证 / 规则缺口 合并） ----
+    # ---- 标注区（缺口 / 无法验证 / 规则缺口 合并） ----
     row += 1
-    ws.cell(row=row, column=1, value="标注区（缺口 / 无法静态验证 / 规则缺口）").font = bold
+    write_section_title(ws, row, "标注区（缺口 / 无法静态验证 / 规则缺口）")
     row += 1
     items = []
     for u in (coverage or {}).get("uncovered") or []:
@@ -243,16 +301,20 @@ def build_coverage_sheet(wb, coverage, cases=None):
             g = f"{g.get('category', '')}: {g.get('gap', '')}（{g.get('function', '')}，建议确认：{g.get('confirm_with', '')}）"
         items.append(f"【规则缺口】{g}")
     if not items:
-        ws.cell(row=row, column=1, value="无（代码可表达范围内已全覆盖，无额外标注）").alignment = wrap
+        cset(row, 1, "无（代码可表达范围内已全覆盖，无额外标注）")
+        row += 1
     else:
         for it in items:
-            ws.cell(row=row, column=1, value=it).alignment = wrap
+            cset(row, 1, it)
             row += 1
 
-    ws.column_dimensions["A"].width = 28
-    ws.column_dimensions["B"].width = 32
-    ws.column_dimensions["C"].width = 20
-    ws.column_dimensions["D"].width = 44
+    # 列宽 + 行高自适应（保证换行内容完全显示）
+    ws.column_dimensions["A"].width = COVERAGE_WIDTH_MAP[1]
+    ws.column_dimensions["B"].width = COVERAGE_WIDTH_MAP[2]
+    ws.column_dimensions["C"].width = COVERAGE_WIDTH_MAP[3]
+    ws.column_dimensions["D"].width = COVERAGE_WIDTH_MAP[4]
+    for r in range(1, ws.max_row + 1):
+        fit_row_height(ws, r, COVERAGE_WIDTH_MAP)
     return ws
 
 
@@ -269,30 +331,33 @@ def build_workbook(cases):
     ws = wb.active
     ws.title = "研发自测用例"
 
-    header_fill = PatternFill("solid", fgColor="4472C4")
-    header_font = Font(bold=True, color="FFFFFF")
-    thin = Side(style="thin", color="BFBFBF")
-    border = Border(left=thin, right=thin, top=thin, bottom=thin)
-    wrap = Alignment(wrap_text=True, vertical="top")
-
     # 表头
     for col, (_, title) in enumerate(COLUMNS, start=1):
         cell = ws.cell(row=1, column=col, value=title)
-        cell.fill = header_fill
-        cell.font = header_font
-        cell.alignment = Alignment(vertical="center", horizontal="center")
-        cell.border = border
+        cell.fill = HEADER_FILL
+        cell.font = Font(name=FONT_NAME, size=HEADER_FONT_SIZE, bold=True, color="FFFFFF")
+        cell.alignment = CENTER
+        cell.border = BORDER
+    ws.row_dimensions[1].height = HEADER_ROW_HEIGHT
 
-    # 数据行（按场景类型给整行字体着色：正常流程绿 / 异常流程红，未知或空保持默认黑）
+    # 数据行（斑马纹 + 场景类型整行着色 + 优先级着色 + 行高自适应）
     for row, case in enumerate(cases, start=2):
         font_color = SCENARIO_TYPE_COLORS.get(case.get("scenario_type"))
+        band_fill = BAND_FILL_EVEN if row % 2 == 0 else BAND_FILL_ODD
+        priority = str(case.get("priority") or "").strip().upper()
+        pri_color = PRIORITY_COLORS.get(priority)
         for col, (key, _) in enumerate(COLUMNS, start=1):
-            value = to_cell_value(case.get(key))
-            cell = ws.cell(row=row, column=col, value=value)
-            cell.alignment = wrap
-            cell.border = border
-            if font_color:
-                cell.font = Font(color=font_color)
+            cell = ws.cell(row=row, column=col, value=to_cell_value(case.get(key)))
+            cell.alignment = WRAP_TOP
+            cell.border = BORDER
+            cell.fill = band_fill
+            if key == "priority" and pri_color:
+                cell.font = Font(name=FONT_NAME, size=FONT_SIZE, bold=True, color=pri_color)
+            elif font_color:
+                cell.font = Font(name=FONT_NAME, size=FONT_SIZE, color=font_color)
+            else:
+                cell.font = Font(name=FONT_NAME, size=FONT_SIZE)
+        fit_row_height(ws, row, MAIN_WIDTH_MAP)
 
     # 列宽 + 冻结首行 + 筛选
     for col, (key, _) in enumerate(COLUMNS, start=1):
