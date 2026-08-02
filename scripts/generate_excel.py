@@ -48,8 +48,11 @@ COLUMNS = [
     ("scenario", "业务场景"),
     ("function", "功能"),
     ("name", "用例名称"),
+    ("verify_point", "验证点"),
     ("precondition", "前置条件"),
     ("steps", "操作步骤"),
+    ("verify_method", "验证方法"),
+    ("auto_level", "可自动化程度"),
     ("priority", "优先级"),
     ("expected_result", "预期结果"),
     ("test_result", "测试结果"),
@@ -60,7 +63,8 @@ COLUMNS = [
 # 每列宽度（近似，按最长表头/内容预估）
 COLUMN_WIDTHS = {
     "case_id": 14, "scenario": 16, "function": 16, "name": 28,
-    "precondition": 34, "steps": 42, "priority": 8,
+    "verify_point": 30, "precondition": 34, "steps": 42,
+    "verify_method": 13, "auto_level": 15, "priority": 8,
     "expected_result": 44, "test_result": 12, "remark": 30, "code_location": 18,
 }
 
@@ -87,12 +91,24 @@ def build_coverage_sheet(wb, coverage, cases=None):
     row += 1
     for label, covered, total in (
         ("业务入口覆盖", stats.get("entry_covered"), stats.get("entry_total")),
-        ("判定点覆盖", stats.get("dp_covered"), stats.get("dp_total")),
+        ("判定点覆盖（机器基准）", stats.get("dp_covered"), stats.get("dp_total")),
+        ("需求验证点覆盖", stats.get("verification_covered"), stats.get("verification_total")),
     ):
         ws.cell(row=row, column=1, value=label).border = border
         val = f"{covered}/{total}" if covered is not None and total is not None else ""
         ws.cell(row=row, column=2, value=val).border = border
         row += 1
+
+    # 可自动化程度分布（验证计划编排依据）
+    auto_dist = (coverage or {}).get("auto_level_distribution")
+    if auto_dist:
+        row += 1
+        ws.cell(row=row, column=1, value="可自动化程度分布").font = bold
+        row += 1
+        for level, cnt in auto_dist.items():
+            ws.cell(row=row, column=1, value=str(level)).border = border
+            ws.cell(row=row, column=2, value=str(cnt)).border = border
+            row += 1
 
     # 功能覆盖清单（研发视角：每个功能必须有 ≥1 条用例）
     per_function = (coverage or {}).get("per_function") if isinstance(coverage, dict) else None
@@ -189,6 +205,8 @@ def build_coverage_sheet(wb, coverage, cases=None):
         items.append(f"【缺口】{u}")
     for n in (coverage or {}).get("notes") or []:
         items.append(f"【无法验证】{n}")
+    for g in (coverage or {}).get("verification_gaps") or []:
+        items.append(f"【验证缺口】{g}")
     for g in (coverage or {}).get("rule_gaps") or []:
         if isinstance(g, dict):
             g = f"{g.get('category', '')}: {g.get('gap', '')}（{g.get('function', '')}，建议确认：{g.get('confirm_with', '')}）"
